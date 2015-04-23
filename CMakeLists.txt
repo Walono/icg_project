@@ -5,7 +5,7 @@ project(icg-projet)
 include(common/icg_settings.cmake)
 
 #--- Week 3
-add_subdirectory(mountain)
+add_subdirectory(mountains)
 
 
 
