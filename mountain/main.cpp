@@ -4,7 +4,6 @@
 
 enum NAVIGATION_MODE {
 	TRACKBALL,
-	BEZIER
 } navmode;
 
 using namespace std;
