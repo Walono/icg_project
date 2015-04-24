@@ -1,3 +1,7 @@
-*.exe
 /build/*
 /MakeFile
+/mountains/Debug/*
+
+*.exe
+*.ilk
+
