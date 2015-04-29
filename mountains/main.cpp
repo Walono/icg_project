@@ -11,7 +11,7 @@ enum OPTIMIZATION_MODE {
     OPTI_OFF
 } optimode;
 
-int width=1280, height=720;
+int width=720, height=720;
 
 float _oldYPos = 5;
 

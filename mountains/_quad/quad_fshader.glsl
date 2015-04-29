@@ -53,13 +53,13 @@ float inoise(vec2 pos) {
 }
 
 void main() {
-	int octaves = 3;
+	int octaves = 10;
 	float lacunarity = 2.1f;
-	float gain = 0.65f;
-	float biai = 0.7;
+	float gain = 0.4f;
+	float biai = 1.5;
 			
 	float total = 0.0f;
-	float frequency = 1.0f/200.0f;
+	float frequency = 1.0f/170.0f;
 	float amplitude = gain;
 		                
 	for (int i = 0; i < octaves; ++i){
