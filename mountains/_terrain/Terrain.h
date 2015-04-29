@@ -7,7 +7,8 @@ protected:
     GLuint _vbo_position; ///< memory buffer for positions
     GLuint _vbo_index;    ///< memory buffer for indice
     GLuint _pid;          ///< GLSL shader program ID
-    GLuint _heightmap;          ///< Texture ID
+    GLuint _heightmap;    ///< Texture ID
+	GLuint _tex[4];		  //<- Texure array
     GLuint _num_indices;  ///< number of vertices to render
     
 public:    
@@ -67,22 +68,45 @@ public:
         }
 
 		///--- Load/Assign Hightmap texture
+		glGenTextures(4, _tex);
+		glActiveTexture(GL_TEXTURE0);
 		this->_heightmap = texture;
-		glBindTexture(GL_TEXTURE_2D, _heightmap);
-		GLuint tex_id = glGetUniformLocation(_pid, "heightmap");
-		glUniform1i(tex_id, 0 /*GL_TEXTURE0*/);
+		_tex[0] = _heightmap;
+		glBindTexture(GL_TEXTURE_2D, _tex[0]);
+		// Load texture
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, _tex[1]);
+		glfwLoadTexture2D("grass.jpg", 1);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, _tex[2]);
+		glfwLoadTexture2D("snow.jpg", 2);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, _tex[3]);
+		glfwLoadTexture2D("rock.png", 3);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 		/*
-        // Load texture
-        glGenTextures(1, &_tex);
-        glBindTexture(GL_TEXTURE_2D, _tex);
-        glfwLoadTexture2D("terrain_texture.tga", 0);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        */
+		this->_heightmap = texture;
+		glBindTexture(GL_TEXTURE_2D, _heightmap);
+		GLuint heightmap_id = glGetUniformLocation(_pid, "heightmap");
+		glUniform1i(heightmap_id, 0 );
+		*/
+        
         // Texture uniforms
-       // GLuint tex_id = glGetUniformLocation(_pid, "tex");
-		//glUniform1i(tex_id, 0 /*GL_TEXTURE0*/); 
+		GLuint heightmap_id = glGetUniformLocation(_pid, "heightmap");
+		glUniform1i(heightmap_id, 0 /*GL_TEXTURE0*/);
+
+		GLuint grass_id = glGetUniformLocation(_pid, "grass");
+		glUniform1i(grass_id, 1 /*GL_TEXTURE1*/);
+		GLuint snow_id = glGetUniformLocation(_pid, "snow");
+		glUniform1i(snow_id, 2 /*GL_TEXTURE2*/);
+		GLuint rock_id = glGetUniformLocation(_pid, "rock");
+		glUniform1i(rock_id, 3 /*GL_TEXTURE3*/);
         
         // to avoid the current object being polluted
         glBindVertexArray(0);
@@ -101,8 +125,14 @@ public:
         glUseProgram(_pid);
         glBindVertexArray(_vao);
         // Bind textures
-        glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, _heightmap);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, _tex[0]);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, _tex[1]);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, _tex[2]);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, _tex[3]);
 
         // Setup MVP
         mat4 MVP = projection*view*model;
