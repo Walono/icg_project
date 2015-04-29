@@ -53,7 +53,6 @@ float inoise(vec2 pos) {
 }
 
 void main() {
-	float noise = (inoise(uv*100) + inoise(uv*180) + inoise(uv*10) + inoise(uv*25))/4;
-
+	float noise = (inoise(uv*30) + inoise(uv*10) + inoise(uv*5) + inoise(uv*20) + inoise(uv*100))/5;
 	color = vec3(noise, noise, noise);
 }
