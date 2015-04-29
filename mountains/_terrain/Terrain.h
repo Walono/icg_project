@@ -7,7 +7,7 @@ protected:
     GLuint _vbo_position; ///< memory buffer for positions
     GLuint _vbo_index;    ///< memory buffer for indice
     GLuint _pid;          ///< GLSL shader program ID
-    GLuint _tex;          ///< Texture ID
+    GLuint _heightmap;          ///< Texture ID
     GLuint _num_indices;  ///< number of vertices to render
     
 public:    
@@ -25,52 +25,10 @@ public:
         {
             std::vector<GLfloat> vertices;
             std::vector<GLuint> indices;
-            // TODO 5: Make a triangle grid with dimension 100x100.
-            // Always two subsequent entries in 'vertices' form a 2D vertex position.
+
             int terrain_dim = 100;
 
-            // The given code below are the vertices for a simple quad.
-            // Your grid should have the same dimension as that quad, i.e.,
-            // reach from [-1, -1] to [1, 1].
-
-            // Vertex position of the triangles.
-            /**
-            vertices.push_back(-1.0f); vertices.push_back( 1.0f);
-            vertices.push_back( 1.0f); vertices.push_back( 1.0f);
-            vertices.push_back( 1.0f); vertices.push_back(-1.0f);
-            vertices.push_back(-1.0f); vertices.push_back(-1.0f);
-            vertices.push_back(0.0f); vertices.push_back(0.0f);
-            */
-            /**
-            for (float x = -1.0f ; x <= 1.0f-0.02 ; x = x + 0.02) {
-                for (float y = -1.0f; y <= 1.0f-0.02; y += 0.02) {
-                    vertices.push_back(x); vertices.push_back(y) ;
-                    vertices.push_back(x); vertices.push_back(y+0.02) ;
-                    vertices.push_back(x+0.02); vertices.push_back(y) ;
-                    vertices.push_back(x+0.02); vertices.push_back(y+0.02);
-                    vertices.push_back(x+ 0.01); vertices.push_back(y + 0.01);
-                    
-                }
-            }
-            
-
-            // And indices.
-            for (int i = 0 ; i < 500*500; i= i + 5) {
-                indices.push_back(i);
-                indices.push_back(i+1) ;
-                indices.push_back(i+4) ;
-                indices.push_back(i+1) ;
-                indices.push_back(i+ 3);
-                indices.push_back(i+4) ;
-                indices.push_back(i+3) ;
-                indices.push_back(i+2) ;
-                indices.push_back(i+4) ;
-                indices.push_back(i) ;
-                indices.push_back(i+4) ;
-                indices.push_back(i+2);
-            }
-            */
-            
+			//Generate the mesh            
 			for (int i = 0; i <= terrain_dim; i++){
 				for (int j = 0; j <= terrain_dim; j++){
 					vertices.push_back(-1.0f + i * 2 / (float)terrain_dim); vertices.push_back(-1.0f + j * 2 / (float)terrain_dim);
@@ -108,10 +66,10 @@ public:
             glVertexAttribPointer(loc_position, 2, GL_FLOAT, DONT_NORMALIZE, ZERO_STRIDE, ZERO_BUFFER_OFFSET);
         }
 
-		///--- Load/Assign texture
-		this->_tex = texture;
-		glBindTexture(GL_TEXTURE_2D, _tex);
-		GLuint tex_id = glGetUniformLocation(_pid, "tex");
+		///--- Load/Assign Hightmap texture
+		this->_heightmap = texture;
+		glBindTexture(GL_TEXTURE_2D, _heightmap);
+		GLuint tex_id = glGetUniformLocation(_pid, "heightmap");
 		glUniform1i(tex_id, 0 /*GL_TEXTURE0*/);
 
 		/*
@@ -136,7 +94,7 @@ public:
         glDeleteBuffers(1, &_vbo_index);
         glDeleteVertexArrays(1, &_vao);
         glDeleteProgram(_pid);
-        glDeleteTextures(1, &_tex);
+		glDeleteTextures(1, &_heightmap);
     }
     
     void draw(const mat4& model, const mat4& view, const mat4& projection, float time){
@@ -144,7 +102,7 @@ public:
         glBindVertexArray(_vao);
         // Bind textures
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, _tex);
+		glBindTexture(GL_TEXTURE_2D, _heightmap);
 
         // Setup MVP
         mat4 MVP = projection*view*model;
