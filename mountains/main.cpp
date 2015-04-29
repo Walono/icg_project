@@ -87,7 +87,7 @@ void resize_callback(int width, int height) {
 }
 
 void init(){
-    glClearColor(1,1,1, /*solid*/1.0 );    
+	glClearColor(0.5, 0.5, 0.5, /*solid*/1.0);
     glEnable(GL_DEPTH_TEST);
     cube.init();
     quad.init();

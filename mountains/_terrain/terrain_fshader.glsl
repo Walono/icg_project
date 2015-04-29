@@ -5,15 +5,7 @@ in vec3 newPos;
 
 void main() {
 
-	
-	if(newPos.y < 0.5 && newPos.y > 0.4) {
-	color = vec3(0.f,0.f,1.f);
-	}
-	else if( newPos.y < 0.4 && newPos.y > 0.1){
-		color = vec3(0.f,1.f,0.f);
-	}
-	else {
-	color = vec3(1.f,0.f,0.f);
-	}
+	float pond = (newPos.y + 0.3);
+	color = vec3(0.1 * pond, 1.f * pond, 0.1f * pond);
     
 }
