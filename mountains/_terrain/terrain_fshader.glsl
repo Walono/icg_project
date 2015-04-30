@@ -3,26 +3,27 @@ out vec4 color;
 in vec2 uv;
 in vec3 newPos;
 uniform sampler2D grass;
+uniform sampler2D snow;
+uniform sampler2D rock;
 
 void main() {
 	float pond = (newPos.y + 0.3);
 
-	//vec3 green =  vec3(0.1 * pond, 1.f * pond, 0.1f * pond);
-	vec4 green = texture(grass, uv);
-	vec4 white =  vec4(1.f * pond, 1.f * pond, 1.f * pond,0);
-	vec4 yellow = vec4(1.f * pond, 1.f * pond, 0.1f * pond,0);
+	vec4 grassVec = texture(grass, uv);
+	vec4 snowVec = texture(snow, uv);
+	vec4  rockVec = texture(rock, uv);
 
 
 	if (newPos.y > 0.65) {
-		color = white;
+		color = snowVec;
 	}
 	else if (newPos.y > 0.55 && newPos.y < 0.65){
-		color = mix(green, white, 0.2);
+		color = mix(grassVec, snowVec, 0.2);
 	}
 	else if (newPos.y < 0.375) {
-	color = yellow;
+	color = rockVec;
 	}
 	else {
-		color = green;
+		color = grassVec;
     }
 }
