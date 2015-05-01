@@ -177,7 +177,10 @@ public:
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, _tex3);
 
-        // Setup MVP
+        // Setup MV and MVP
+        mat4 MV = view*model;
+        GLuint MV_id = glGetUniformLocation(_pid, "mv");
+        glUniformMatrix4fv(MV_id, 1, GL_FALSE, MV.data());
         mat4 MVP = projection*view*model;
         GLuint MVP_id = glGetUniformLocation(_pid, "mvp");
         glUniformMatrix4fv(MVP_id, 1, GL_FALSE, MVP.data());

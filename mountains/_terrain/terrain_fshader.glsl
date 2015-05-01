@@ -1,4 +1,9 @@
 #version 330 core
+
+uniform vec3 Ia, Id, Is;
+uniform vec3 ka, kd, ks;
+uniform float p;
+
 out vec4 color;
 in vec2 uv;
 in vec3 newPos;
