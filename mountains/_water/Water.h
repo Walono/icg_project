@@ -52,26 +52,6 @@ public:
 			}
             _num_indices = indices.size();
 
-			//define wave element
-			GLuint numWaves = 4.f;
-			glUniform1f(glGetUniformLocation(_pid, "numWaves"), numWaves);
-			GLfloat amplitude[4];
-			GLfloat wavelength[4];
-			GLfloat speed[4];
-			GLfloat angle[4];
-
-			for (int i = 0; i < 4; i++) {
-				amplitude[i] = 0.5f / (i + 1);
-				wavelength[i] = 8 * M_PI / (i + 1);
-				speed[i] = 1.0f + 2 * i;
-				angle[i] = rand() / (RAND_MAX + 1) * (M_PI / 3 - -M_PI / 3 + 1) + -M_PI / 3;				
-			}
-			glUniform1fv(glGetUniformLocation(_pid, "amplitude"), 4, amplitude);
-			glUniform1fv(glGetUniformLocation(_pid, "wavelength"), 4, wavelength);
-			glUniform1fv(glGetUniformLocation(_pid, "speed"), 4, speed);
-			glUniform1fv(glGetUniformLocation(_pid, "angle"), 4, angle);
-
-
             // position buffer
             glGenBuffers(1, &_vbo_position);
             glBindBuffer(GL_ARRAY_BUFFER, _vbo_position);
