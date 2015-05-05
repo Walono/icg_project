@@ -5,6 +5,7 @@
 #include "_screenquad/ScreenQuad.h"
 #include "_terrain/Terrain.h"
 #include "trackball.h"
+#include "_water/Water.h"
 
 enum OPTIMIZATION_MODE {
     OPTI_ON,
@@ -19,7 +20,8 @@ Cube cube;
 Quad quad;
 
 FrameBuffer fb(width, height);
-Terrain squad;
+Terrain terrain;
+Water water;
 
 mat4 projection_matrix;
 mat4 view_matrix;
@@ -99,7 +101,8 @@ void init(){
 	quad.draw(mat4::Identity());
 	fb.unbind();
 
-	squad.init(fb_tex);
+	terrain.init(fb_tex);
+	water.init(fb_tex);
 	view_matrix = LookAt(vec3(2.0f, 2.0f, 4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 	view_matrix = Eigen::Affine3f(Eigen::Translation3f(0.0f, 0.0f, -4.0f)).matrix();
 	trackball_matrix = mat4::Identity();
@@ -126,8 +129,8 @@ void display(){
 	const float time = glfwGetTime();
 
 	mat4 quad_model_matrix = Eigen::Affine3f(Eigen::Translation3f(vec3(0.0f, -0.25f, 0.0f))).matrix();
-	squad.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time);
-
+	terrain.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time);
+	water.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time);
 }
 
 /*void keyboard(int key, int action){
