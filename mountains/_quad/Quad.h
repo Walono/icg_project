@@ -74,7 +74,7 @@ public:
         /// TODO
     }
     
-    void draw(const mat4& MVP){
+    void draw(const mat4& MVP, int octaves, float lacunarity, float gain, float frequence, float biai){
         glUseProgram(_pid);
         glBindVertexArray(_vao);        
             ///--- Bind textures
@@ -84,6 +84,17 @@ public:
             ///--- Setup MVP
             GLuint MVP_id = glGetUniformLocation(_pid, "MVP");
             glUniformMatrix4fv(MVP_id, 1, GL_FALSE, MVP.data());   
+            
+            GLuint octaves_id = glGetUniformLocation(_pid, "octaves");
+            glUniform1f(octaves_id, octaves);
+            GLuint lacunarity_id = glGetUniformLocation(_pid, "lacunarity");
+            glUniform1f(lacunarity_id, lacunarity);
+            GLuint gain_id = glGetUniformLocation(_pid, "gain");
+            glUniform1f(gain_id, gain);
+            GLuint frequence_id = glGetUniformLocation(_pid, "frequence");
+            glUniform1f(frequence_id, frequence);
+            GLuint biai_id = glGetUniformLocation(_pid, "biai");
+            glUniform1f(biai_id, biai);
             
             ///--- Draw
             glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);

@@ -92,14 +92,30 @@ void init(){
     cube.init();
     quad.init();
     optimode = OPTI_OFF;
-    GLuint fb_tex = fb.init();   
-
+    GLuint heightmap_tex = fb.init(true);   
+    
+	//noise for mountains heightmap
 	fb.bind();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	quad.draw(mat4::Identity());
+	quad.draw(mat4::Identity(), 13, 2.1f, 0.4f, 1/170.0f, 1.5);
+	fb.unbind();
+	
+	std::vector<GLuint> tabMixingTex;
+	tabMixingTex.push_back(fb.init()); 
+	//noise for mixing grass and rock
+	fb.bind();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	quad.draw(mat4::Identity(), 3, 2.0f, 0.6f, 1/100.0f, 1.5);
+	fb.unbind();
+	
+	tabMixingTex.push_back(fb.init()); 
+	//noise for mixing snow with grass
+	fb.bind();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	quad.draw(mat4::Identity(), 13, 2.0f, 0.4f, 1/14.0f, 1.4);
 	fb.unbind();
 
-	squad.init(fb_tex);
+	squad.init(heightmap_tex, tabMixingTex);
 	view_matrix = LookAt(vec3(2.0f, 2.0f, 4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 	view_matrix = Eigen::Affine3f(Eigen::Translation3f(0.0f, 0.0f, -4.0f)).matrix();
 	trackball_matrix = mat4::Identity();
@@ -127,6 +143,7 @@ void display(){
 
 	mat4 quad_model_matrix = Eigen::Affine3f(Eigen::Translation3f(vec3(0.0f, -0.25f, 0.0f))).matrix();
 	squad.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time);
+	cube.draw(projection_matrix*view_matrix*trackball_matrix , time);
 
 }
 

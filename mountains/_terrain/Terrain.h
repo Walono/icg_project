@@ -6,19 +6,23 @@ struct Light{
 	vec3 Id = vec3(1.0f, 1.0f, 1.0f);
 	vec3 Is = vec3(1.0f, 1.0f, 1.0f);
 
-	vec3 light_pos = vec3(0.0f, 0.0f, 0.01f);
+	vec3 light_pos = vec3(1.0f, 1.0f, 1.0f);
 
 	///--- Pass light properties to the shader
 	void setup(GLuint _pid){
 		glUseProgram(_pid);
+		
 		GLuint light_pos_id = glGetUniformLocation(_pid, "light_pos"); //Given in camera space
-		GLuint Ia_id = glGetUniformLocation(_pid, "Ia");
-		GLuint Id_id = glGetUniformLocation(_pid, "Id");
-		GLuint Is_id = glGetUniformLocation(_pid, "Is");
 		glUniform3fv(light_pos_id, ONE, light_pos.data());
+		GLuint Ia_id = glGetUniformLocation(_pid, "Ia");
 		glUniform3fv(Ia_id, ONE, Ia.data());
+		GLuint Id_id = glGetUniformLocation(_pid, "Id");
 		glUniform3fv(Id_id, ONE, Id.data());
+		GLuint Is_id = glGetUniformLocation(_pid, "Is");
 		glUniform3fv(Is_id, ONE, Is.data());
+		
+		
+		
 	}
 
 	vec3 get_spot_direction(float time) {
@@ -46,20 +50,23 @@ struct Material{
 	}
 };
 
-class Terrain{
+class Terrain : public Material, public Light{
 protected:
     GLuint _vao;          ///< vertex array object
     GLuint _vbo_position; ///< memory buffer for positions
     GLuint _vbo_index;    ///< memory buffer for indice
     GLuint _pid;          ///< GLSL shader program ID
     GLuint _heightmap;    ///< Texture ID
+    vector<GLuint> _tabMixingTex;
 	GLuint _tex1;		  //<- Texure
 	GLuint _tex2;		  //<- Texure
 	GLuint _tex3;		  //<- Texure
+	GLuint _tex4;
     GLuint _num_indices;  ///< number of vertices to render
+    Light light;
     
 public:    
-	void init(GLuint texture){
+	void init(GLuint heightmapTex, vector<GLuint> tabMixingTex){
         // Compile the shaders
         _pid = opengp::load_shaders("_terrain/terrain_vshader.glsl", "_terrain/terrain_fshader.glsl");
         if(!_pid) exit(EXIT_FAILURE);       
@@ -68,13 +75,13 @@ public:
         // Vertex one vertex Array
         glGenVertexArrays(1, &_vao);
         glBindVertexArray(_vao);
-     
+        
         // Vertex coordinates and indices
         {
             std::vector<GLfloat> vertices;
             std::vector<GLuint> indices;
 
-            int terrain_dim = 100;
+            int terrain_dim = 1024;
 
 			//Generate the mesh            
 			for (int i = 0; i <= terrain_dim; i++){
@@ -115,15 +122,19 @@ public:
         }
 
 		///--- Load/Assign Hightmap texture
-		this->_heightmap = texture;
+		this->_heightmap = heightmapTex;
 		glBindTexture(GL_TEXTURE_2D, _heightmap);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		GLuint heightmap_id = glGetUniformLocation(_pid, "heightmap");
 		glUniform1i(heightmap_id, 0);
 
 		// Load texture
 		glGenTextures(1, &_tex1);		
 		glBindTexture(GL_TEXTURE_2D, _tex1);
-		glfwLoadTexture2D("_terrain/grass.tga", 0);
+		glfwLoadTexture2D("_terrain/texture-herbe.tga", 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
@@ -133,6 +144,8 @@ public:
 		glGenTextures(1, &_tex2);
 		glBindTexture(GL_TEXTURE_2D, _tex2);
 		glfwLoadTexture2D("_terrain/snow.tga", 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
@@ -141,15 +154,46 @@ public:
 
 		glGenTextures(1, &_tex3);
 		glBindTexture(GL_TEXTURE_2D, _tex3);
-		glfwLoadTexture2D("_terrain/rock.tga", 0);
+		glfwLoadTexture2D("_terrain/rock2.tga", 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 		GLuint rock_id = glGetUniformLocation(_pid, "rock");
 		glUniform1i(rock_id, 3 /*GL_TEXTURE3*/);
+		
+		///bind texture for mix
+		this ->_tabMixingTex = tabMixingTex;
+		glActiveTexture(GL_TEXTURE4);
+		//glGenTextures(1, &_tabMixingTex.at(0));
+		glBindTexture(GL_TEXTURE_2D, _tabMixingTex.at(0));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		GLuint mixTexTerrain_id = glGetUniformLocation(_pid, "mixTexTerrain");
+		glUniform1i(mixTexTerrain_id, 4);
+		
+		glActiveTexture(GL_TEXTURE6);
+		//glGenTextures(1, &_tabMixingTex.at(0));
+		glBindTexture(GL_TEXTURE_2D, _tabMixingTex.at(1));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		GLuint mixSnowGrass_id = glGetUniformLocation(_pid, "mixSnowGrass");
+		glUniform1i(mixSnowGrass_id, 6);
+		
+		glGenTextures(1, &_tex4);
+		glBindTexture(GL_TEXTURE_2D, _tex4);
+		glfwLoadTexture2D("_terrain/montagneNeige2.tga", 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		GLuint grassSnow_id = glGetUniformLocation(_pid, "grassSnow");
+		glUniform1i(grassSnow_id, 5 /*GL_TEXTURE5*/);
+		
 
         
-        // Texture uniforms
         
         // to avoid the current object being polluted
         glBindVertexArray(0);
@@ -176,14 +220,28 @@ public:
 		glBindTexture(GL_TEXTURE_2D, _tex2);
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, _tex3);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D,_tabMixingTex.at(0));
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D,_tex4);
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D,_tabMixingTex.at(1));
+		
+		Material::setup(_pid);
+        Light::setup(_pid);
 
         // Setup MVP
-        mat4 MVP = projection*view*model;
-        GLuint MVP_id = glGetUniformLocation(_pid, "mvp");
-        glUniformMatrix4fv(MVP_id, 1, GL_FALSE, MVP.data());
+        mat4 P = projection;
+        mat4 MV = view*model;
+        GLuint P_id = glGetUniformLocation(_pid, "P");
+        glUniformMatrix4fv(P_id, 1, GL_FALSE, P.data());
+        
+        GLuint MV_id = glGetUniformLocation(_pid, "MV");
+        glUniformMatrix4fv(MV_id, 1, GL_FALSE, MV.data());
 
         // Pass the current time stamp to the shader.
         glUniform1f(glGetUniformLocation(_pid, "time"), time);
+        
 
         // Draw
         // TODO 5: For debugging it can be helpful to draw only the wireframe.

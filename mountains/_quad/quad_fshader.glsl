@@ -1,5 +1,11 @@
 #version 330 core
 
+uniform float octaves;
+uniform float lacunarity;
+uniform float gain;
+uniform float frequence;
+uniform float biai;
+
 in vec2 uv;
 
 out vec3 color;
@@ -53,23 +59,19 @@ float inoise(vec2 pos) {
 }
 
 void main() {
-	int octaves = 10;
-	float lacunarity = 2.1f;
-	float gain = 0.4f;
-	float biai = 1.5;
 			
 	float total = 0.0f;
-	float frequency = 1.0f/170.0f;
+	float frequency = frequence;
 	float amplitude = gain;
 		                
 	for (int i = 0; i < octaves; ++i){
-		total += inoise(vec2(gl_FragCoord.x * frequency, gl_FragCoord.y * frequency)) * amplitude;         
+		total += abs(inoise(vec2(gl_FragCoord.x * frequency, gl_FragCoord.y * frequency))) * amplitude;         
 		frequency *= lacunarity;
 		amplitude *= gain;
 	}
 	total *= biai;
 			
-	float noise = (inoise(uv*100) + inoise(uv*180) + inoise(uv*10) + inoise(uv*25))/4;
+	//float noise = (inoise(uv*100) + inoise(uv*180) + inoise(uv*10) + inoise(uv*25))/4;
 		
 	color = vec3(total, total, total);
 }

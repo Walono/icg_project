@@ -20,7 +20,7 @@ protected:
 public:
     FrameBuffer(int image_width, int image_height){
         this->_width = image_width;
-        this->_height = image_height;        
+        this->_height = image_height;         
     }
         
     ///--- Warning: ovverrides viewport!!
