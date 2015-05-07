@@ -1,9 +1,14 @@
 #version 330 core
 
+
+uniform vec3 Ia, Id, Is;
+uniform float p;
+
 out vec3 color;
 in vec2 uv;
 in vec3 newPos;
 
+in vec3 normal_mv;
 in vec3 light_dir;
 in vec3 view_dir;
 
@@ -15,8 +20,6 @@ uniform sampler2D mixTexTerrain;
 uniform sampler2D mixSnowGrass;
 uniform sampler2D heightmap;
 
-uniform vec3 Ia, Id, Is;
-uniform float p;
 
 
 float rand(vec2 co){
@@ -52,7 +55,7 @@ void main() {
 	/// calculate normale
 	vec2 position = vec2(newPos.x, newPos.y);
 	
-	vec3 pointFond = vec3(newPos.x, texture(heightmap,((position +vec2(0.0,(1/1023.0f))+ vec2(1.0, 1.0)) * 0.5)).x , newPos.z+(1/1023.0f));
+	/*vec3 pointFond = vec3(newPos.x, texture(heightmap,((position +vec2(0.0,(1/1023.0f))+ vec2(1.0, 1.0)) * 0.5)).x , newPos.z+(1/1023.0f));
 	vec3 vecFond = pointFond-newPos;
 	
 	vec3 pointDevant = vec3(newPos.x, texture(heightmap, ((position -vec2(0.0,(1/1023.0f))+ vec2(1.0, 1.0)) * 0.5)).x, newPos.z-(1/1023.0f));
@@ -69,18 +72,20 @@ void main() {
 	vec3 v3 = cross(vecDroite, vecDevant);
 	vec3 v4 = cross(vecDevant, vecGauche);
 	
-	vec3 normal_mv = normalize(v1+v2+v3+v4);
+	vec3 normal_mv = normalize(v1+v2+v3+v4);*/
+	
+
 	
 	//normal_mv = (1,1,1);
 	
-	//calcultate shading
+	//calculate shading
 	vec3 mirror_reflex = normalize(reflect(-light_dir, normal_mv));
     vec3 ambiant = Ia * color;
     float NL = max(dot(normal_mv, light_dir), 0);
     vec3 diffuse = (Id * color) * NL;
     float VR = max(dot(view_dir, mirror_reflex), 0);
     vec3 specular = (Is * color) * pow(VR, p);
-    color = diffuse;//+specular;
+    color = diffuse;
     //color = ambiant;
 	
 	

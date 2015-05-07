@@ -5,6 +5,12 @@
 #include "_screenquad/ScreenQuad.h"
 #include "_terrain/Terrain.h"
 #include "trackball.h"
+#include "_water/Water.h"
+
+#ifdef WITH_ANTTWEAKBAR
+#include "AntTweakBar.h"
+TwBar *bar;
+#endif
 
 enum OPTIMIZATION_MODE {
     OPTI_ON,
@@ -19,11 +25,15 @@ Cube cube;
 Quad quad;
 
 FrameBuffer fb(width, height);
-Terrain squad;
+Terrain terrain;
+Water water;
 
 mat4 projection_matrix;
 mat4 view_matrix;
 mat4 trackball_matrix;
+mat4 old_trackball_matrix;
+
+vec3 light_pos = vec3(0,0,0.01);
 
 Trackball trackball;
 
@@ -91,8 +101,34 @@ void init(){
     glEnable(GL_DEPTH_TEST);
     cube.init();
     quad.init();
+    
+    #ifdef WITH_ANTTWEAKBAR
+    TwInit(TW_OPENGL_CORE, NULL);
+    TwWindowSize(width, height);
+    bar = TwNewBar("AntTweakBar");
+    ///--- Light
+    TwAddVarRW(bar, "Ia", TW_TYPE_COLOR3F, terrain.Ia.data(), NULL);
+    TwAddVarRW(bar, "Id", TW_TYPE_COLOR3F, terrain.Id.data(), NULL);
+    TwAddVarRW(bar, "Is", TW_TYPE_COLOR3F, terrain.Is.data(), NULL);
+    TwAddVarRW(bar, "LightDir", TW_TYPE_DIR3F, light_pos.data(), NULL);
+    ///--- Material
+    TwAddVarRW(bar, "p", TW_TYPE_FLOAT, &terrain.p, "min=.5 max=50 step=0.4");
+    ///--- Callbacks
+    ///--- https://github.com/davidcox/AntTweakBar/blob/master/examples/TwSimpleGLFW.c
+    glfwSetMouseButtonCallback((GLFWmousebuttonfun)TwEventMouseButtonGLFW);
+    glfwSetMouseButtonCallback((GLFWmousebuttonfun)TwEventMouseButtonGLFW);
+    glfwSetMousePosCallback((GLFWmouseposfun)TwEventMousePosGLFW);
+    glfwSetMouseWheelCallback((GLFWmousewheelfun)TwEventMouseWheelGLFW);
+    //glfwSetKeyCallback((GLFWkeyfun)TwEventKeyGLFW);
+    //glfwSetCharCallback((GLFWcharfun)TwEventCharGLFW);
+#endif
+    
     optimode = OPTI_OFF;
     GLuint heightmap_tex = fb.init(true);   
+    
+    
+    
+    
     
 	//noise for mountains heightmap
 	fb.bind();
@@ -115,12 +151,15 @@ void init(){
 	quad.draw(mat4::Identity(), 13, 2.0f, 0.4f, 1/14.0f, 1.4);
 	fb.unbind();
 
-	squad.init(heightmap_tex, tabMixingTex);
+	terrain.init(heightmap_tex, tabMixingTex);
+	water.init(heightmap_tex);
 	view_matrix = LookAt(vec3(2.0f, 2.0f, 4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 	view_matrix = Eigen::Affine3f(Eigen::Translation3f(0.0f, 0.0f, -4.0f)).matrix();
 	trackball_matrix = mat4::Identity();
 	check_error_gl();
 }
+
+
 
 void display(){ 
     opengp::update_title_fps("FrameBuffer");   
@@ -129,8 +168,8 @@ void display(){
     ///--- Setup view-projection matrix
     float ratio = width / (float) height;
     static mat4 projection = Eigen::perspective(45.0f, ratio, 0.1f, 10.0f);
-    vec3 cam_pos(2.0f, 2.0f, 2.0f);
-    vec3 cam_look(0.0f, 0.0f, 0.0f);
+    vec3 cam_pos(0.0f, 0.0f, 0.0f);
+    vec3 cam_look(0.1f, 1.0f, 0.1f);
     vec3 cam_up(0.0f, 0.0f, 1.0f);
     mat4 view = Eigen::lookAt(cam_pos, cam_look, cam_up);
     mat4 VP = projection * view;
@@ -141,27 +180,24 @@ void display(){
 
 	const float time = glfwGetTime();
 
-	mat4 quad_model_matrix = Eigen::Affine3f(Eigen::Translation3f(vec3(0.0f, -0.25f, 0.0f))).matrix();
-	squad.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time);
-	cube.draw(projection_matrix*view_matrix*trackball_matrix , time);
+	mat4 quad_model_matrix = Eigen::Affine3f(Eigen::Translation3f(vec3(0.0f, -0.85f, 0.0f))).matrix();
 
+	terrain.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time, light_pos);
+	cube.draw(projection_matrix*view_matrix*trackball_matrix , time);
+	water.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time, light_pos);
+
+
+#ifdef WITH_ANTTWEAKBAR
+    TwDraw();
+#endif
 }
 
-/*void keyboard(int key, int action){
-    if(action != GLFW_RELEASE) return; ///< only act on release
-    switch(key){
-        case '1':
-            optimode = OPTI_OFF;
-            std::cout << "optimization off.\n" << std::flush;
-            break;
-        case '2':
-            optimode = OPTI_ON;
-            std::cout << "optimization on.\n" << std::flush;
-            break;
-        default:
-            break;
-    }
-}*/
+void cleanup(){
+#ifdef WITH_ANTTWEAKBAR
+    TwTerminate();
+#endif
+}
+
 
 // Transforms glfw screen coordinates into normalized OpenGL coordinates.
 vec2 transform_screen_coords(int x, int y) {
@@ -169,7 +205,7 @@ vec2 transform_screen_coords(int x, int y) {
 		1.0f - 2.0f * (float)y / height);
 }
 
-mat4 old_trackball_matrix;
+
 
 void mouse_button(int button, int action) {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
@@ -217,15 +253,37 @@ void mouse_pos(int x, int y) {
 	}
 }
 
+void keyboard(int key, int action){
+    if(action != GLFW_RELEASE) return; ///< only act on release
+    switch(key){
+        case '1':
+	glfwSetMouseButtonCallback(mouse_button);
+	glfwSetMousePosCallback(mouse_pos);
+            std::cout << "navigation mode.\n" << std::flush;
+            break;
+        case '2':
+            glfwSetMouseButtonCallback((GLFWmousebuttonfun)TwEventMouseButtonGLFW);
+    glfwSetMouseButtonCallback((GLFWmousebuttonfun)TwEventMouseButtonGLFW);
+    glfwSetMousePosCallback((GLFWmouseposfun)TwEventMousePosGLFW);
+    glfwSetMouseWheelCallback((GLFWmousewheelfun)TwEventMouseWheelGLFW);
+            std::cout << "set value mode.\n" << std::flush;
+            break;
+        default:
+            break;
+    }
+}
+
 int main(int, char**){
     glfwInitWindowSize(width, height);
     glfwCreateWindow();
     glfwDisplayFunc(display);
+    glfwSetKeyCallback(keyboard);
 	glfwSetWindowSizeCallback(&resize_callback);
 	glfwSetMouseButtonCallback(mouse_button);
 	glfwSetMousePosCallback(mouse_pos);
     init();
     glfwSwapInterval(0); ///< disable VSYNC (allows framerate>30)
     glfwMainLoop();
+    cleanup();
     return EXIT_SUCCESS;
 }

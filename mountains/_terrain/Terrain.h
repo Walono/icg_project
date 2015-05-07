@@ -6,12 +6,11 @@ struct Light{
 	vec3 Id = vec3(1.0f, 1.0f, 1.0f);
 	vec3 Is = vec3(1.0f, 1.0f, 1.0f);
 
-	vec3 light_pos = vec3(1.0f, 1.0f, 1.0f);
+	vec3 light_pos = vec3(0.0,0.0,0.01);
 
 	///--- Pass light properties to the shader
 	void setup(GLuint _pid){
 		glUseProgram(_pid);
-		
 		GLuint light_pos_id = glGetUniformLocation(_pid, "light_pos"); //Given in camera space
 		glUniform3fv(light_pos_id, ONE, light_pos.data());
 		GLuint Ia_id = glGetUniformLocation(_pid, "Ia");
@@ -27,6 +26,10 @@ struct Light{
 
 	vec3 get_spot_direction(float time) {
 		return light_pos;
+	}
+	
+		void set_spot_direction(vec3 set) {
+		light_pos=set;
 	}
 };
 
@@ -81,7 +84,7 @@ public:
             std::vector<GLfloat> vertices;
             std::vector<GLuint> indices;
 
-            int terrain_dim = 1024;
+            int terrain_dim = 512;
 
 			//Generate the mesh            
 			for (int i = 0; i <= terrain_dim; i++){
@@ -192,8 +195,10 @@ public:
 		GLuint grassSnow_id = glGetUniformLocation(_pid, "grassSnow");
 		glUniform1i(grassSnow_id, 5 /*GL_TEXTURE5*/);
 		
+		
+        	Material::setup(_pid);
+        Light::setup(_pid);
 
-        
         
         // to avoid the current object being polluted
         glBindVertexArray(0);
@@ -208,7 +213,7 @@ public:
 		glDeleteTextures(1, &_heightmap);
     }
     
-    void draw(const mat4& model, const mat4& view, const mat4& projection, float time){
+    void draw(const mat4& model, const mat4& view, const mat4& projection, float time, vec3 light_pos){
         glUseProgram(_pid);
         glBindVertexArray(_vao);
         // Bind textures
@@ -227,8 +232,9 @@ public:
 		glActiveTexture(GL_TEXTURE6);
 		glBindTexture(GL_TEXTURE_2D,_tabMixingTex.at(1));
 		
-		Material::setup(_pid);
-        Light::setup(_pid);
+		Light::set_spot_direction(light_pos);
+		GLuint light_pos_id = glGetUniformLocation(_pid, "light_pos"); //Given in camera space
+		glUniform3fv(light_pos_id, ONE, Light::get_spot_direction(time).data());
 
         // Setup MVP
         mat4 P = projection;
@@ -238,6 +244,7 @@ public:
         
         GLuint MV_id = glGetUniformLocation(_pid, "MV");
         glUniformMatrix4fv(MV_id, 1, GL_FALSE, MV.data());
+
 
         // Pass the current time stamp to the shader.
         glUniform1f(glGetUniformLocation(_pid, "time"), time);

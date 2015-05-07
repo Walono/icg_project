@@ -1,36 +1,44 @@
 #version 330 core
-
-
+const float pi = 3.14159f;
 uniform mat4 P;
 uniform mat4 MV;
 
 uniform sampler2D heightmap;
+uniform float time;
 uniform vec3 light_pos;
-
 in vec2 position;
+
 out vec2 uv;
 out vec3 newPos;
+out float seaLvl;
 
 out vec3 normal_mv;
 out vec3 light_dir;
 out vec3 view_dir;
 
+float wave(float x, float y) {
+	float height = texture(heightmap, uv).x;
+	float amplitude;
+	if((seaLvl - height) < 0.025){
+		amplitude = 50 / (seaLvl - height);
+	} else {
+		amplitude = 500;
+	}	
+	return (sin((time*0.8+x*16+y*10)*8)+cos((time+16*x+16*y)*6)+sin((time*1.1+16*x+14*y)*6)+cos((time+20*x+8*y)*6))/amplitude;
+}
+
+
 void main() {
+	seaLvl = 0.45f;
 	mat4 mvp = P*MV;
     uv = (position + vec2(1.0, 1.0)) * 0.5;
+
+	float height = seaLvl + wave(uv.x, uv.y);
 	
-    float height = texture(heightmap, uv).x;
     vec3 pos_3d = vec3(position.x, height, position.y);
-    ///--phong shading---///
-    //vec4 vpoint_mv = MV * vec4(pos_3d, 1.0);
     vec4 vpoint_mv = MV*vec4(pos_3d, 1.0);
-    
     light_dir = normalize(light_pos - vpoint_mv.xyz);
 	view_dir = normalize(-vpoint_mv.xyz);
-	///---///
-    gl_Position = mvp * vec4(pos_3d, 1.0);
-	newPos = pos_3d.xyz;
-	
 
 	float delta = 1/128.0f; /// -> 1/128
 	vec2 v0xz = vec2(position.x, position.y - delta);
@@ -54,11 +62,7 @@ void main() {
 	vec3 vnormal = normalize(v01 + v12 + v23 + v30);
 	normal_mv = normalize((inverse(transpose(MV)) * vec4(vnormal, 1.0)).xyz);
 
-    //vec4 vpoint_mv = mv * vec4(position, 1.0);
-    //light_dir = normalize(light_pos - vpoint_mv.xyz);
-    //light_dir = normalize(light_pos - pos_3d);
-	//view_dir = normalize(-vpoint_mv.xyz);
-	//normal_mv = normalize((inverse(transpose(mv)) * vec4(vnormal, 1.0)).xyz);
-	//view_dir = -pos_3d;
-	//normal_mv = vnormal;
+
+    gl_Position = mvp * vec4(pos_3d, 1.0);
+	newPos = pos_3d;
 }
