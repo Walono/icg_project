@@ -32,7 +32,7 @@ void main() {
 	newPos = pos_3d.xyz;
 	
 
-	float delta = 1/128.0f; /// -> 1/128
+	float delta = 1/512.0f; /// -> 1/128
 	vec2 v0xz = vec2(position.x, position.y - delta);
 	float h0 = texture(heightmap, (v0xz + vec2(1.0, 1.0)) * 0.5).x;
 	vec3 v0 = vec3(v0xz.x, h0, v0xz.y);

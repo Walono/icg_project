@@ -37,7 +37,7 @@ void main() {
 	vec3  rockVec = texture(rock, uv).xyz;
 	float mixRock = texture(mixTexTerrain, uv).x;
 	vec3 grassSnowVec = texture(grassSnow, uv).xyz;
-	float snowGrassMix = texture(mixSnowGrass, uv).x;
+	float snowGrassMix = texture(grassSnow, uv).x;
 	
 	color = mix(grassVec, rockVec, mixRock);
 

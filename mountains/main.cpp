@@ -33,7 +33,7 @@ mat4 view_matrix;
 mat4 trackball_matrix;
 mat4 old_trackball_matrix;
 
-vec3 light_pos = vec3(0,0,0.01);
+vec3 light_pos = vec3(1,1,1);
 
 Trackball trackball;
 
@@ -181,10 +181,13 @@ void display(){
 	const float time = glfwGetTime();
 
 	mat4 quad_model_matrix = Eigen::Affine3f(Eigen::Translation3f(vec3(0.0f, -0.85f, 0.0f))).matrix();
-
-	terrain.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time, light_pos);
+	mat4 mat = view_matrix*trackball_matrix * quad_model_matrix;
+	vec4 vec = vec4(light_pos.x(), light_pos.y(), light_pos.z(), 1.0);
+	vec4 vc2 = mat*vec;
+	vec3 light = vec3(vc2.x(), vc2.y(), vc2.z());
+	terrain.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time,light);
 	cube.draw(projection_matrix*view_matrix*trackball_matrix , time);
-	water.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time, light_pos);
+	water.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time, light);
 
 
 #ifdef WITH_ANTTWEAKBAR
