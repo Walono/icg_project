@@ -98,18 +98,14 @@ void resize_callback(int width, int height) {
 
 void init(){
 	glClearColor(0.5, 0.5, 0.5, /*solid*/1.0);
-	check_error_gl();
     glEnable(GL_DEPTH_TEST);
-    check_error_gl();
     cube.init();
-    check_error_gl();
     quad.init();
-    check_error_gl();
+    
     #ifdef WITH_ANTTWEAKBAR
     TwInit(TW_OPENGL_CORE, NULL);
     TwWindowSize(width, height);
     bar = TwNewBar("AntTweakBar");
-    check_error_gl();
     ///--- Light
     TwAddVarRW(bar, "Ia", TW_TYPE_COLOR3F, terrain.Ia.data(), NULL);
     TwAddVarRW(bar, "Id", TW_TYPE_COLOR3F, terrain.Id.data(), NULL);
@@ -117,7 +113,6 @@ void init(){
     TwAddVarRW(bar, "LightDir", TW_TYPE_DIR3F, light_pos.data(), NULL);
     ///--- Material
     TwAddVarRW(bar, "p", TW_TYPE_FLOAT, &terrain.p, "min=.5 max=50 step=0.4");
-    
     ///--- Callbacks
     ///--- https://github.com/davidcox/AntTweakBar/blob/master/examples/TwSimpleGLFW.c
     glfwSetMouseButtonCallback((GLFWmousebuttonfun)TwEventMouseButtonGLFW);
@@ -270,10 +265,10 @@ void keyboard(int key, int action){
             std::cout << "navigation mode.\n" << std::flush;
             break;
         case '2':
-            glfwSetMouseButtonCallback((GLFWmousebuttonfun)TwEventMouseButtonGLFW);
-    glfwSetMouseButtonCallback((GLFWmousebuttonfun)TwEventMouseButtonGLFW);
-    glfwSetMousePosCallback((GLFWmouseposfun)TwEventMousePosGLFW);
-    glfwSetMouseWheelCallback((GLFWmousewheelfun)TwEventMouseWheelGLFW);
+            //glfwSetMouseButtonCallback((GLFWmousebuttonfun)TwEventMouseButtonGLFW);
+   // glfwSetMouseButtonCallback((GLFWmousebuttonfun)TwEventMouseButtonGLFW);
+    //glfwSetMousePosCallback((GLFWmouseposfun)TwEventMousePosGLFW);
+    //glfwSetMouseWheelCallback((GLFWmousewheelfun)TwEventMouseWheelGLFW);
             std::cout << "set value mode.\n" << std::flush;
             break;
         default:

@@ -4,5 +4,5 @@ in vec2 uv;
 out vec3 color;
 
 void main(){
-    color = texture(tex, uv);
+    color = texture(tex, uv).xyz;
 }
