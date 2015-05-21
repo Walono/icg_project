@@ -9,11 +9,11 @@ protected:
     GLuint _vbo_index;    ///< memory buffer for indice
     GLuint _pid;          ///< GLSL shader program ID
     GLuint _heightmap;    ///< Texture ID
-	GLuint _tex_water;	  ///< Texture ID
+	GLuint _tex_mirror;	  ///< Texture ID
     GLuint _num_indices;  ///< number of vertices to render
     
 public:    
-	void init(GLuint texture){
+	void init(GLuint tex_heightMap, GLuint tex_mirror){
         // Compile the shaders
         _pid = opengp::load_shaders("_water/water_vshader.glsl", "_water/water_fshader.glsl");
         if(!_pid) exit(EXIT_FAILURE);       
@@ -69,22 +69,19 @@ public:
         }
 
 		///--- Load/Assign Hightmap texture
-		this->_heightmap = texture;
+		this->_heightmap = tex_heightMap;
 		glBindTexture(GL_TEXTURE_2D, _heightmap);
 		GLuint heightmap_id = glGetUniformLocation(_pid, "heightmap");
 		glUniform1i(heightmap_id, 0);
 
-		// Load texture
-		glGenTextures(1, &_tex_water);
-		glBindTexture(GL_TEXTURE_2D, _tex_water);
-		glfwLoadTexture2D("_terrain/grass.tga", 0);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-		GLuint grass_id = glGetUniformLocation(_pid, "grass");
-		glUniform1i(grass_id, 1 /*GL_TEXTURE1*/);
+		//--- Texture uniforms
+		this-> _tex_mirror = tex_mirror;
+		GLuint tex_mirror_id = glGetUniformLocation(_pid, "tex_mirror");
+		glUniform1i(tex_mirror_id, 1);
 		
-				Material::setup(_pid);
+		
+		
+		Material::setup(_pid);
         Light::setup(_pid);
         
         // to avoid the current object being polluted
@@ -107,7 +104,7 @@ public:
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, _heightmap);
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, _tex_water);
+		glBindTexture(GL_TEXTURE_2D, _tex_mirror);
 		
 	Light::set_spot_direction(light_pos);
 		GLuint light_pos_id = glGetUniformLocation(_pid, "light_pos"); //Given in camera space

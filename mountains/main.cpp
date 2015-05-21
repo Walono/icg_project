@@ -100,6 +100,7 @@ void init(){
 	glClearColor(0.5, 0.5, 0.5, /*solid*/1.0);
 	check_error_gl();
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_MULTISAMPLE);
     check_error_gl();
     cube.init();
     check_error_gl();
@@ -131,10 +132,6 @@ void init(){
     optimode = OPTI_OFF;
     GLuint heightmap_tex = fb.init(true);   
     
-    
-    
-    
-    
 	//noise for mountains heightmap
 	fb.bind();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -157,7 +154,11 @@ void init(){
 	fb.unbind();
 
 	terrain.init(heightmap_tex, tabMixingTex);
-	water.init(heightmap_tex);
+	
+	//water with reflection
+	GLuint fb_tex = fb.init();
+	water.init(heightmap_tex, fb_tex);	
+	
 	view_matrix = LookAt(vec3(2.0f, 2.0f, 4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 	view_matrix = Eigen::Affine3f(Eigen::Translation3f(0.0f, 0.0f, -4.0f)).matrix();
 	trackball_matrix = mat4::Identity();
@@ -173,10 +174,11 @@ void display(){
     ///--- Setup view-projection matrix
     float ratio = width / (float) height;
     static mat4 projection = Eigen::perspective(45.0f, ratio, 0.1f, 10.0f);
-    vec3 cam_pos(0.0f, 0.0f, 0.0f);
-    vec3 cam_look(0.1f, 1.0f, 0.1f);
-    vec3 cam_up(0.0f, 0.0f, 1.0f);
+    vec3 cam_pos(2.0f, 2.0f, 4.0f);
+    vec3 cam_look(0.f, 0.f, 0.f);
+    vec3 cam_up(0.0f, 1.0f, 0.0f);
     mat4 view = Eigen::lookAt(cam_pos, cam_look, cam_up);
+    
     mat4 VP = projection * view;
 
     ///--- Render to Window
@@ -184,12 +186,24 @@ void display(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	const float time = glfwGetTime();
+	
+	vec3 cam_pos_mirrored = vec3(cam_pos.x(), cam_pos.y(), -cam_pos.z());
+	mat4 view_matrix_mirrored = view_matrix;
+	view_matrix_mirrored(0,3) = -view_matrix(0,3);
+	mat4 VP_mirrored = projection * view_matrix_mirrored;
 
 	mat4 quad_model_matrix = Eigen::Affine3f(Eigen::Translation3f(vec3(0.0f, -0.85f, 0.0f))).matrix();
-	mat4 mat = view_matrix*trackball_matrix * quad_model_matrix;
+	mat4 mat = view_matrix*trackball_matrix * quad_model_matrix;	
 	vec4 vec = vec4(light_pos.x(), light_pos.y(), light_pos.z(), 1.0);
 	vec4 vc2 = mat*vec;
 	vec3 light = vec3(vc2.x(), vc2.y(), vc2.z());
+	
+	//get the terrain reflection
+	fb.bind();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		terrain.draw(trackball_matrix * quad_model_matrix, view_matrix_mirrored, projection_matrix, time, light);
+	fb.unbind();
+		
 	terrain.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time,light);
 	cube.draw(projection_matrix*view_matrix*trackball_matrix , time);
 	water.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time, light);
