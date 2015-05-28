@@ -14,7 +14,7 @@ uniform float p;
 uniform sampler2D heightmap;
 uniform sampler2D tex_mirror;
 
-const float transparency = 0.6f;
+const float transparency = 1.0f;
 
 
 void main() {

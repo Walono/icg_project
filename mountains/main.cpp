@@ -184,22 +184,22 @@ void display(){
 	
 	mat4 T = mat4::Identity();
 	if(_moveL){
-		T(0, 3) = 0.05f;
+		T(0, 3) = 0.01f;
 		view_matrix = T * view_matrix;
 		//view_matrix_mirrored = T * view_matrix_mirrored;
 	}
 	if(_moveR){
-		T(0, 3) = -0.05f;
+		T(0, 3) = -0.01f;
 		view_matrix = T * view_matrix;
 		//view_matrix_mirrored = T * view_matrix_mirrored;
 	}
 	if(_moveU){
-		T(2, 3) = 0.075f;
+		T(2, 3) = 0.02f;
 		view_matrix = T * view_matrix;
 		//view_matrix_mirrored = T * view_matrix_mirrored;
 	}
 	if(_moveD){
-		T(2, 3) = -0.075f;
+		T(2, 3) = -0.02f;
 		view_matrix = T * view_matrix;
 		//view_matrix_mirrored = T * view_matrix_mirrored;
 	}
