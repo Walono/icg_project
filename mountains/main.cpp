@@ -19,7 +19,12 @@ enum OPTIMIZATION_MODE {
 
 int width=720, height=720;
 
+float _oldXPos = 5;
 float _oldYPos = 5;
+bool _moveL;
+bool _moveR;
+bool _moveU;
+bool _moveD;
 
 Cube cube;
 Quad quad;
@@ -30,6 +35,7 @@ Water water;
 
 mat4 projection_matrix;
 mat4 view_matrix;
+mat4 view_matrix_mirrored;
 mat4 trackball_matrix;
 mat4 old_trackball_matrix;
 
@@ -51,37 +57,6 @@ mat4 PerspectiveProjection(float fovy, float aspect, float near, float far){
 	return projection;
 }
 
-mat4 LookAt(vec3 eye, vec3 center, vec3 up) {
-	// We need a function that converts from world coordinates into camera coordiantes.
-	//
-	// Cam coords to world coords is given by:
-	// X_world = R * X_cam + eye
-	//
-	// inverting it leads to:
-	//
-	// X_cam = R^T * X_world - R^T * eye
-	//
-	// Or as a homogeneous matrix:
-	// [ r_00 r_10 r_20 -r_0*eye
-	//   r_01 r_11 r_21 -r_1*eye
-	//   r_02 r_12 r_22 -r_2*eye
-	//      0    0    0        1 ]
-
-	vec3 z_cam = (eye - center).normalized();
-	vec3 x_cam = up.cross(z_cam).normalized();
-	vec3 y_cam = z_cam.cross(x_cam);
-
-	mat3 R;
-	R.col(0) = x_cam;
-	R.col(1) = y_cam;
-	R.col(2) = z_cam;
-
-	mat4 look_at = mat4::Zero();
-	look_at.block(0, 0, 3, 3) = R.transpose();
-	look_at(3, 3) = 1.0f;
-	look_at.block(0, 3, 3, 1) = -R.transpose() * (eye);
-	return look_at;
-}
 
 // Gets called when the windows is resized.
 void resize_callback(int width, int height) {
@@ -159,9 +134,14 @@ void init(){
 	GLuint fb_tex = fb.init();
 	water.init(heightmap_tex, fb_tex);	
 	
-	view_matrix = LookAt(vec3(2.0f, 2.0f, 4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-	view_matrix = Eigen::Affine3f(Eigen::Translation3f(0.0f, 0.0f, -4.0f)).matrix();
+	view_matrix = Eigen::lookAt(vec3(2.0f, 2.0f, 4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
+	//view_matrix_mirrored = Eigen::lookAt(vec3(2.0f, 2.0f, 4.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 	trackball_matrix = mat4::Identity();
+	
+	_moveL = false;
+	_moveR = false;
+	_moveU = false;
+	_moveD = false;
 	check_error_gl();
 }
 
@@ -177,9 +157,9 @@ void display(){
     vec3 cam_pos(2.0f, 2.0f, 4.0f);
     vec3 cam_look(0.f, 0.f, 0.f);
     vec3 cam_up(0.0f, 1.0f, 0.0f);
-    mat4 view = Eigen::lookAt(cam_pos, cam_look, cam_up);
+    //view = Eigen::lookAt(cam_pos, cam_look, cam_up);
     
-    mat4 VP = projection * view;
+    //mat4 VP = projection * view_matrix;
 
     ///--- Render to Window
     glViewport(0, 0, width, height);
@@ -187,10 +167,13 @@ void display(){
 
 	const float time = glfwGetTime();
 	
-	vec3 cam_pos_mirrored = vec3(cam_pos.x(), cam_pos.y(), -cam_pos.z());
-	mat4 view_matrix_mirrored = view_matrix;
-	view_matrix_mirrored(0,3) = -view_matrix(0,3);
-	mat4 VP_mirrored = projection * view_matrix_mirrored;
+	mat4 reflectionMatrix = mat4::Identity();
+	reflectionMatrix(2,2) = -1.f;
+	reflectionMatrix(2,3) = 0.9f;
+
+	view_matrix_mirrored = view_matrix * reflectionMatrix;
+	
+	//mat4 VP_mirrored = projection * view_matrix_mirrored;
 
 	mat4 quad_model_matrix = Eigen::Affine3f(Eigen::Translation3f(vec3(0.0f, -0.85f, 0.0f))).matrix();
 	mat4 mat = view_matrix*trackball_matrix * quad_model_matrix;	
@@ -199,14 +182,38 @@ void display(){
 	vec3 light = vec3(vc2.x(), vc2.y(), vc2.z());
 	
 	//get the terrain reflection
-	fb.bind();
+	/*fb.bind();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		terrain.draw(trackball_matrix * quad_model_matrix, view_matrix_mirrored, projection_matrix, time, light);
-	fb.unbind();
+		terrain.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time, light);
+	fb.unbind();*/
 		
-	terrain.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time,light);
+	//terrain.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time,light);
+	terrain.draw(trackball_matrix * quad_model_matrix, view_matrix_mirrored, projection_matrix, time, light);
 	cube.draw(projection_matrix*view_matrix*trackball_matrix , time);
 	water.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time, light);
+	
+	
+	mat4 T = mat4::Identity();
+	if(_moveL){
+		T(0, 3) = 0.05f;
+		view_matrix = T * view_matrix;
+		view_matrix_mirrored = T * view_matrix_mirrored;
+	}
+	if(_moveR){
+		T(0, 3) = -0.05f;
+		view_matrix = T * view_matrix;
+		view_matrix_mirrored = T * view_matrix_mirrored;
+	}
+	if(_moveU){
+		T(2, 3) = 0.075f;
+		view_matrix = T * view_matrix;
+		view_matrix_mirrored = T * view_matrix_mirrored;
+	}
+	if(_moveD){
+		T(2, 3) = -0.075f;
+		view_matrix = T * view_matrix;
+		view_matrix_mirrored = T * view_matrix_mirrored;
+	}
 
 
 #ifdef WITH_ANTTWEAKBAR
@@ -246,8 +253,29 @@ void mouse_pos(int x, int y) {
 		// trackball.drag(...) and the value stored in 'old_model_matrix'.
 		// See also the mouse_button(...) function.
 		//model_matrix = ...
-		trackball_matrix = trackball.drag(p(0), p(1)) * old_trackball_matrix;
-
+		//trackball_matrix = trackball.drag(p(0), p(1)) * old_trackball_matrix;
+		if (_oldXPos == 5 || _oldYPos == 5){
+			_oldXPos = 1.0f - 2.0f * (float)x / width;
+			_oldYPos = 1.0f - 2.0f * (float)y / height;			
+		}
+		float posX = 1.0f - 2.0f * (float)x / width;
+		float posY = 1.0f - 2.0f * (float)y / height;
+		float ratio = 0.05f;
+		if (((-1 * (_oldYPos - posY)) >= 0.05) || ((-1 * (_oldYPos - posY)) <= -0.05)
+			|| ((-1 * (_oldXPos - posX)) >= 0.05) || ((-1 * (_oldXPos - posX)) <= -0.05)){
+			//do nothing
+		}
+		else {
+			mat4 RX = Eigen::Affine3f(Eigen::AngleAxisf((_oldYPos - posY), vec3::UnitX())).matrix();
+			mat4 RY = Eigen::Affine3f(Eigen::AngleAxisf((_oldXPos - posX), vec3::UnitY())).matrix();
+			view_matrix = RX * view_matrix;
+			view_matrix = RY * view_matrix;
+			
+			view_matrix_mirrored = RX * view_matrix_mirrored;
+			view_matrix_mirrored = RY * view_matrix_mirrored;
+		}
+		_oldXPos = posX;
+		_oldYPos = posY;
 	}
 
 	// Zoom
@@ -269,6 +297,7 @@ void mouse_pos(int x, int y) {
 			mat4 T = mat4::Identity();
 			T(2, 3) = -1 * (_oldYPos - posY) * ratio;
 			view_matrix = T * view_matrix;
+			view_matrix_mirrored = T * view_matrix_mirrored;
 		}
 		_oldYPos = posY;
 
@@ -276,7 +305,25 @@ void mouse_pos(int x, int y) {
 }
 
 void keyboard(int key, int action){
-    if(action != GLFW_RELEASE) return; ///< only act on release
+	
+    if(action != GLFW_RELEASE){
+		 switch(key){
+			case 65: 
+				_moveL = true;
+				break;
+			case 68: 
+				_moveR = true;
+				break;
+			case 83: 
+				_moveD = true;
+				break;
+			case 87: 
+				_moveU = true;
+				break;
+			 default:
+				break;
+		}
+	} else{
     switch(key){
         case '1':
 	glfwSetMouseButtonCallback(mouse_button);
@@ -290,9 +337,22 @@ void keyboard(int key, int action){
     glfwSetMouseWheelCallback((GLFWmousewheelfun)TwEventMouseWheelGLFW);
             std::cout << "set value mode.\n" << std::flush;
             break;
+        case 65: 
+			_moveL = false;
+			break;
+		case 68: 
+			_moveR = false;
+			break;
+		case 83: 
+			_moveD = false;
+			break;
+		case 87: 
+			_moveU = false;
+			break;		
         default:
             break;
     }
+}
 }
 
 int main(int, char**){
