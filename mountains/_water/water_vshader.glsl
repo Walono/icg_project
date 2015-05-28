@@ -32,6 +32,7 @@ void main() {
 	seaLvl = 0.45f;
 	mat4 mvp = P*MV;
     uv = (position + vec2(1.0, 1.0)) * 0.5;
+   
 
 	float height = seaLvl + wave(uv.x, uv.y);
 	
@@ -65,4 +66,5 @@ void main() {
 
     gl_Position = mvp * vec4(pos_3d, 1.0);
 	newPos = pos_3d;
+	
 }

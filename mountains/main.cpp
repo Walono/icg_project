@@ -35,7 +35,7 @@ Water water;
 
 mat4 projection_matrix;
 mat4 view_matrix;
-mat4 view_matrix_mirrored;
+//mat4 view_matrix_mirrored;
 mat4 trackball_matrix;
 mat4 old_trackball_matrix;
 
@@ -44,8 +44,6 @@ vec3 light_pos = vec3(1,1,1);
 Trackball trackball;
 
 mat4 PerspectiveProjection(float fovy, float aspect, float near, float far){
-	// TODO 1: Create a perspective projection matrix given the field of view,
-	// aspect ratio, and near and far plane distances.
 	mat4 projection = mat4::Zero();
 	double f = 1 / tan(fovy / 2);
 
@@ -100,8 +98,6 @@ void init(){
     glfwSetMouseButtonCallback((GLFWmousebuttonfun)TwEventMouseButtonGLFW);
     glfwSetMousePosCallback((GLFWmouseposfun)TwEventMousePosGLFW);
     glfwSetMouseWheelCallback((GLFWmousewheelfun)TwEventMouseWheelGLFW);
-    //glfwSetKeyCallback((GLFWkeyfun)TwEventKeyGLFW);
-    //glfwSetCharCallback((GLFWcharfun)TwEventCharGLFW);
 #endif
     
     optimode = OPTI_OFF;
@@ -130,7 +126,7 @@ void init(){
 
 	terrain.init(heightmap_tex, tabMixingTex);
 	
-	//water with reflection
+	//water with reflection, actually didn't work
 	GLuint fb_tex = fb.init();
 	water.init(heightmap_tex, fb_tex);	
 	
@@ -153,13 +149,6 @@ void display(){
     
     ///--- Setup view-projection matrix
     float ratio = width / (float) height;
-    static mat4 projection = Eigen::perspective(45.0f, ratio, 0.1f, 10.0f);
-    vec3 cam_pos(2.0f, 2.0f, 4.0f);
-    vec3 cam_look(0.f, 0.f, 0.f);
-    vec3 cam_up(0.0f, 1.0f, 0.0f);
-    //view = Eigen::lookAt(cam_pos, cam_look, cam_up);
-    
-    //mat4 VP = projection * view_matrix;
 
     ///--- Render to Window
     glViewport(0, 0, width, height);
@@ -167,11 +156,11 @@ void display(){
 
 	const float time = glfwGetTime();
 	
-	mat4 reflectionMatrix = mat4::Identity();
-	reflectionMatrix(2,2) = -1.f;
-	reflectionMatrix(2,3) = 0.9f;
+	//used for reflection but actually didn't work
+	//mat4 reflectionMatrix =  Eigen::Affine3f(Eigen::scale(vec3(1.0,-1.0,1.0)).matrix();
+	//reflectionMatrix(2,2) = -1.f;
+	//reflectionMatrix(2,3) = 0.9f;
 
-	view_matrix_mirrored = view_matrix * reflectionMatrix;
 	
 	//mat4 VP_mirrored = projection * view_matrix_mirrored;
 
@@ -182,37 +171,37 @@ void display(){
 	vec3 light = vec3(vc2.x(), vc2.y(), vc2.z());
 	
 	//get the terrain reflection
-	/*fb.bind();
+	/*b.bind();
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		terrain.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time, light);
+		cube.draw(projection_matrix*view_matrix_mirrored, time);
 	fb.unbind();*/
 		
 	//terrain.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time,light);
-	terrain.draw(trackball_matrix * quad_model_matrix, view_matrix_mirrored, projection_matrix, time, light);
-	cube.draw(projection_matrix*view_matrix*trackball_matrix , time);
-	water.draw(trackball_matrix * quad_model_matrix, view_matrix, projection_matrix, time, light);
+	terrain.draw(quad_model_matrix, view_matrix, projection_matrix, time, light);
+	cube.draw(projection_matrix*view_matrix, time);
+	water.draw(quad_model_matrix, view_matrix, projection_matrix, time, light);
 	
 	
 	mat4 T = mat4::Identity();
 	if(_moveL){
 		T(0, 3) = 0.05f;
 		view_matrix = T * view_matrix;
-		view_matrix_mirrored = T * view_matrix_mirrored;
+		//view_matrix_mirrored = T * view_matrix_mirrored;
 	}
 	if(_moveR){
 		T(0, 3) = -0.05f;
 		view_matrix = T * view_matrix;
-		view_matrix_mirrored = T * view_matrix_mirrored;
+		//view_matrix_mirrored = T * view_matrix_mirrored;
 	}
 	if(_moveU){
 		T(2, 3) = 0.075f;
 		view_matrix = T * view_matrix;
-		view_matrix_mirrored = T * view_matrix_mirrored;
+		//view_matrix_mirrored = T * view_matrix_mirrored;
 	}
 	if(_moveD){
 		T(2, 3) = -0.075f;
 		view_matrix = T * view_matrix;
-		view_matrix_mirrored = T * view_matrix_mirrored;
+		//view_matrix_mirrored = T * view_matrix_mirrored;
 	}
 
 
@@ -249,11 +238,6 @@ void mouse_button(int button, int action) {
 void mouse_pos(int x, int y) {
 	if (glfwGetMouseButton(GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
 		vec2 p = transform_screen_coords(x, y);
-		// TODO 3: Cacuclate 'model_matrix' given the return value of
-		// trackball.drag(...) and the value stored in 'old_model_matrix'.
-		// See also the mouse_button(...) function.
-		//model_matrix = ...
-		//trackball_matrix = trackball.drag(p(0), p(1)) * old_trackball_matrix;
 		if (_oldXPos == 5 || _oldYPos == 5){
 			_oldXPos = 1.0f - 2.0f * (float)x / width;
 			_oldYPos = 1.0f - 2.0f * (float)y / height;			
@@ -271,19 +255,16 @@ void mouse_pos(int x, int y) {
 			view_matrix = RX * view_matrix;
 			view_matrix = RY * view_matrix;
 			
-			view_matrix_mirrored = RX * view_matrix_mirrored;
-			view_matrix_mirrored = RY * view_matrix_mirrored;
+			//view_matrix_mirrored = RX * view_matrix_mirrored;
+			//view_matrix_mirrored = RY * view_matrix_mirrored;
 		}
 		_oldXPos = posX;
 		_oldYPos = posY;
 	}
 
 	// Zoom
+	/*
 	if (glfwGetMouseButton(GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-		// TODO 4: Implement zooming. When the right mouse button is pressed,
-		// moving the mouse cursor up and down (along the screen's y axis)
-		// should zoom out and it. For that you have to update the current
-		// 'view_matrix' with a translation along the z axis.
 		if (_oldYPos == 5){
 			_oldYPos = 1.0f - 2.0f * (float)y / height;
 		}
@@ -297,11 +278,11 @@ void mouse_pos(int x, int y) {
 			mat4 T = mat4::Identity();
 			T(2, 3) = -1 * (_oldYPos - posY) * ratio;
 			view_matrix = T * view_matrix;
-			view_matrix_mirrored = T * view_matrix_mirrored;
+			//view_matrix_mirrored = T * view_matrix_mirrored;
 		}
 		_oldYPos = posY;
 
-	}
+	}*/
 }
 
 void keyboard(int key, int action){

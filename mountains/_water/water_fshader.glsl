@@ -31,11 +31,14 @@ void main() {
     vec3 specular = (Is * (color_tex*1.3)) * pow(VR, p);
     color_tex = ambiant+diffuse+specular;
     
-    vec2 mirror_size = textureSize(tex_mirror, 0);
+    //Base for reflection, actually don't work
+    /*vec2 mirror_size = textureSize(tex_mirror, 0);
     vec2 _u_v = vec2(gl_FragCoord.x/mirror_size.x, 1-gl_FragCoord.y/mirror_size.y);
     vec3 color_mirror = texture(tex_mirror, vec2(_u_v)).rgb;
+    vec3 color_final = mix(color_tex, color_mirror, vec3(0.5f));
+	*/
     
-    vec3 color_final = mix(color_tex, color_mirror, vec3(0.15f));
-    color = vec4(color_final, transparency);
+    
+    color = vec4(color_tex, transparency);
 	
 }
